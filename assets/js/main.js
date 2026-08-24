@@ -21,6 +21,7 @@
       if (label) label.textContent = nextTheme;
     });
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#081321' : '#f4f6f9');
+    document.dispatchEvent(new CustomEvent('toptal:themechange', { detail: { theme } }));
   };
 
   setTheme(root.dataset.theme || 'light');
@@ -211,7 +212,7 @@
       document.getElementById('hero-profile-employer-name').textContent = data.employer;
       document.getElementById('hero-profile-link').href = data.url;
       heroExpert.classList.remove('is-changing');
-      window.__toptalShaderControl?.pulse('hero-proof', 1.2, 480);
+      window.__toptalShaderControl?.pulse('hero-stage', 1.25, 520);
     }, 150);
     if (focus) tab.focus();
   };
@@ -312,6 +313,7 @@
     document.querySelectorAll('[data-category-card]').forEach((card) => card.classList.toggle('is-selected', card.dataset.categoryCard === tab.dataset.networkCategory));
     document.querySelectorAll('[data-category-select]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.categorySelect === tab.dataset.networkCategory)));
     networkTrack.classList.add('is-changing');
+    window.__toptalShaderControl?.pulse('network-stage', 1.15, 520);
     waitForState(() => {
       renderNetwork(tab.dataset.networkCategory);
       networkTrack.classList.remove('is-changing');
@@ -351,6 +353,15 @@
   const deliveryPanels = Array.from(document.querySelectorAll('[data-delivery]'));
   const deliveryTabs = deliveryPanels.map((panel) => panel.querySelector('button'));
   const deliveryTrack = document.querySelector('[data-delivery-panels]');
+  const syncDeliveryPlane = () => {
+    const activePanel = deliveryPanels.find((panel) => panel.classList.contains('is-active'));
+    if (!activePanel || !deliveryTrack) return;
+    const trackRect = deliveryTrack.getBoundingClientRect();
+    const panelRect = activePanel.getBoundingClientRect();
+    const start = panelRect.left - trackRect.left + deliveryTrack.scrollLeft + panelRect.width * 0.38;
+    deliveryTrack.style.setProperty('--delivery-liquid-left', `${start}px`);
+    deliveryTrack.style.setProperty('--delivery-liquid-width', `${panelRect.width * 0.62}px`);
+  };
   const activateDelivery = (tab, focus = false) => {
     const index = deliveryTabs.indexOf(tab);
     deliveryPanels.forEach((panel, panelIndex) => {
@@ -359,6 +370,8 @@
       const itemTab = deliveryTabs[panelIndex]; itemTab.setAttribute('aria-expanded', String(active)); itemTab.tabIndex = active ? 0 : -1;
       panel.querySelector('.delivery-panel__content').hidden = !active && window.innerWidth >= 768;
     });
+    window.__toptalShaderControl?.pulse('delivery', 1.4, 520);
+    requestAnimationFrame(() => requestAnimationFrame(syncDeliveryPlane));
     document.getElementById('delivery-position').textContent = `${index + 1} of ${deliveryPanels.length}`;
     if (window.innerWidth < 768) deliveryPanels[index].scrollIntoView({ behavior: reduceMotion.matches ? 'auto' : 'smooth', inline: 'start', block: 'nearest' });
     if (focus) tab.focus();
@@ -371,6 +384,8 @@
   };
   document.querySelector('[data-delivery-prev]').addEventListener('click', () => moveDelivery(-1));
   document.querySelector('[data-delivery-next]').addEventListener('click', () => moveDelivery(1));
+  window.addEventListener('resize', syncDeliveryPlane, { passive: true });
+  requestAnimationFrame(() => requestAnimationFrame(syncDeliveryPlane));
 
   const processConsole = document.querySelector('[data-process-console]');
   const processTabs = Array.from(document.querySelectorAll('[data-process-tab]'));
@@ -435,6 +450,7 @@
     const data = expertiseData[tab.dataset.expertise];
     expertiseTabs.forEach((item) => { const active = item === tab; item.setAttribute('aria-selected', String(active)); item.tabIndex = active ? 0 : -1; });
     expertiseDetail.classList.add('is-changing');
+    window.__toptalShaderControl?.pulse('expertise', 1.3, 480);
     waitForState(() => {
       document.getElementById('expertise-discipline').textContent = data.label;
       document.getElementById('expertise-detail-title').textContent = data.title;
@@ -564,6 +580,7 @@
     } else {
       serviceStage.dataset.transitionState = 'exiting';
       window.__toptalShaderControl?.pulse('service-wipe', 2.6, 620);
+      window.__toptalShaderControl?.pulse('services-ambient', 0.82, 620);
       const origin = direction > 0 ? '0% 50%' : '100% 50%';
       const clearX = direction > 0 ? '100%' : '-100%';
       wipeAnimation = serviceWipe.animate([

@@ -14,29 +14,32 @@ import { ShaderMount, liquidMetalFragmentShader } from '@paper-design/shaders';
   const lowCoreCount = hardwareConcurrency > 0 && hardwareConcurrency <= 4;
   const lowMemory = deviceMemory > 0 && deviceMemory <= 4;
   const lowPower = (lowCoreCount && lowMemory) || (deviceMemory > 0 && deviceMemory <= 2);
-  const isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
   const mounts = new Map();
   const cleanups = [];
   let disposed = false;
 
   const profiles = {
-    selector: { idle: 0, hover: 0.85, large: false, maxPixels: 80000, uniforms: { u_repetition: 4, u_softness: 0.5, u_angle: 45, u_scale: 8, u_shape: 0 } },
-    seam: { idle: 0, hover: 0, large: false, maxPixels: 36000, uniforms: { u_repetition: 3, u_softness: 0.56, u_angle: 62, u_scale: 7, u_shape: 0 } },
-    ambient: { idle: 0, hover: 0, large: true, maxPixels: 120000, uniforms: { u_repetition: 3, u_softness: 0.56, u_angle: 62, u_scale: 7, u_shape: 0 } },
-    process: { idle: 0, hover: 0, large: false, maxPixels: 70000, uniforms: { u_repetition: 3.2, u_softness: 0.52, u_angle: 24, u_scale: 7.6, u_shape: 0 } },
-    proof: { idle: 0, hover: 0, large: true, maxPixels: 150000, uniforms: { u_repetition: 4.6, u_softness: 0.48, u_angle: 72, u_scale: 9, u_shape: 0 } },
+    selector: { idle: 0.64, hover: 1.1, large: false, maxPixels: 70000, uniforms: { u_repetition: 4, u_softness: 0.5, u_angle: 45, u_scale: 8, u_shape: 0 } },
+    hero: { idle: 0.52, hover: 0.72, large: true, maxPixels: 190000, uniforms: { u_repetition: 2.8, u_softness: 0.56, u_angle: 58, u_scale: 6.8, u_shape: 0 } },
+    horizon: { idle: 0.28, hover: 0.46, large: true, maxPixels: 130000, uniforms: { u_repetition: 4.8, u_softness: 0.5, u_angle: 7, u_scale: 9.2, u_shape: 0 } },
+    ambient: { idle: 0.24, hover: 0.42, large: true, maxPixels: 150000, uniforms: { u_repetition: 3, u_softness: 0.56, u_angle: 62, u_scale: 7, u_shape: 0 } },
+    stage: { idle: 0.27, hover: 0.48, large: true, maxPixels: 145000, uniforms: { u_repetition: 3.5, u_softness: 0.53, u_angle: 34, u_scale: 7.4, u_shape: 0 } },
+    process: { idle: 0.3, hover: 0.52, large: true, maxPixels: 145000, uniforms: { u_repetition: 3.2, u_softness: 0.52, u_angle: 24, u_scale: 7.6, u_shape: 0 } },
+    proof: { idle: 0.3, hover: 0.5, large: true, maxPixels: 165000, uniforms: { u_repetition: 4.6, u_softness: 0.48, u_angle: 72, u_scale: 9, u_shape: 0 } },
     transition: { idle: 0, hover: 0, large: true, maxPixels: 200000, uniforms: { u_repetition: 2.4, u_softness: 0.58, u_angle: 12, u_scale: 6.6, u_shape: 0 } }
   };
   const profileFor = (surface) => profiles[surface.dataset.liquidProfile] || profiles.selector;
   const surfaceState = new Map(surfaces.map((surface) => [surface, {
     intersecting: false,
+    ratio: 0,
     engaged: false,
+    priority: false,
     requested: profileFor(surface).idle,
     timer: 0,
     flipAnimation: null
   }]));
 
-  const fallbackReason = reduceMotion.matches ? 'reduced-motion' : saveData ? 'save-data' : lowPower ? 'low-power' : isSafari ? 'safari' : !finePointer.matches ? 'coarse-pointer' : '';
+  const fallbackReason = reduceMotion.matches ? 'reduced-motion' : saveData ? 'save-data' : lowPower ? 'low-power' : '';
   const canUseWebGL = () => {
     if (fallbackReason) return false;
     try {
@@ -52,9 +55,10 @@ import { ShaderMount, liquidMetalFragmentShader } from '@paper-design/shaders';
   document.documentElement.classList.add(webglEligible ? 'liquid-webgl-eligible' : 'liquid-static-fallback');
   if (!webglEligible) document.documentElement.dataset.liquidFallback = fallbackReason || 'webgl';
 
+  const themeUniforms = () => document.documentElement.dataset.theme === 'dark'
+    ? { u_colorBack: [0.008, 0.02, 0.07, 1], u_colorTint: [0.34, 0.48, 0.96, 0.76] }
+    : { u_colorBack: [0.018, 0.055, 0.19, 1], u_colorTint: [0.125, 0.31, 0.81, 0.78] };
   const baseUniforms = {
-    u_colorBack: [0.018, 0.055, 0.19, 1],
-    u_colorTint: [0.125, 0.31, 0.81, 0.78],
     u_repetition: 4,
     u_softness: 0.5,
     u_shiftRed: 0.3,
@@ -63,7 +67,7 @@ import { ShaderMount, liquidMetalFragmentShader } from '@paper-design/shaders';
     u_contour: 0,
     u_angle: 45,
     u_scale: 8,
-    u_shape: 1,
+    u_shape: 0,
     u_offsetX: 0.1,
     u_offsetY: -0.1,
     u_isImage: false
@@ -82,15 +86,22 @@ import { ShaderMount, liquidMetalFragmentShader } from '@paper-design/shaders';
   };
 
   const reconcileSpeeds = () => {
-    let movingLarge = 0;
+    const allowedLarge = new Set(surfaces
+      .filter((surface) => {
+        const state = surfaceState.get(surface);
+        return profileFor(surface).large && state.intersecting && state.requested > 0;
+      })
+      .sort((a, b) => {
+        const aState = surfaceState.get(a);
+        const bState = surfaceState.get(b);
+        return Number(bState.priority) - Number(aState.priority) || bState.ratio - aState.ratio;
+      })
+      .slice(0, 2));
     surfaces.forEach((surface) => {
       const state = surfaceState.get(surface);
       const profile = profileFor(surface);
       let speed = document.hidden || !state.intersecting ? 0 : state.requested;
-      if (speed > 0 && profile.large) {
-        movingLarge += 1;
-        if (movingLarge > 1) speed = 0;
-      }
+      if (speed > 0 && profile.large && !allowedLarge.has(surface)) speed = 0;
       applySpeed(surface, speed);
     });
   };
@@ -102,11 +113,11 @@ import { ShaderMount, liquidMetalFragmentShader } from '@paper-design/shaders';
       const mount = new ShaderMount(
         surface,
         liquidMetalFragmentShader,
-        { ...baseUniforms, ...profile.uniforms },
+        { ...baseUniforms, ...themeUniforms(), ...profile.uniforms },
         { alpha: true, antialias: false, premultipliedAlpha: true, powerPreference: 'low-power' },
         0,
         0,
-        Math.min(window.devicePixelRatio || 1, 1.25),
+        Math.min(window.devicePixelRatio || 1, finePointer.matches ? 1.25 : 1.05),
         profile.maxPixels
       );
       mount.canvasElement.setAttribute('aria-hidden', 'true');
@@ -125,19 +136,13 @@ import { ShaderMount, liquidMetalFragmentShader } from '@paper-design/shaders';
     const surface = surfaces.find((item) => item.dataset.liquidSurface === name);
     if (!surface) return;
     const state = surfaceState.get(surface);
-    if (profileFor(surface).large) {
-      surfaces.forEach((other) => {
-        if (other === surface || !profileFor(other).large) return;
-        const otherState = surfaceState.get(other);
-        window.clearTimeout(otherState.timer);
-        otherState.requested = 0;
-      });
-    }
     window.clearTimeout(state.timer);
+    state.priority = true;
     state.requested = speed;
     if (state.intersecting) mountSurface(surface);
     reconcileSpeeds();
     state.timer = window.setTimeout(() => {
+      state.priority = false;
       state.requested = state.engaged ? profileFor(surface).hover : profileFor(surface).idle;
       reconcileSpeeds();
     }, duration);
@@ -165,7 +170,7 @@ import { ShaderMount, liquidMetalFragmentShader } from '@paper-design/shaders';
   };
 
   const updateSelectorGeometry = (selector, animate = true) => {
-    const active = selector.querySelector('button[aria-selected="true"], button[aria-expanded="true"]');
+    const active = selector.querySelector('button[aria-selected="true"], button[aria-expanded="true"], button[aria-pressed="true"]');
     const surface = selector.querySelector('[data-liquid-surface]');
     if (!active || !surface) return;
     const state = surfaceState.get(surface);
@@ -204,7 +209,7 @@ import { ShaderMount, liquidMetalFragmentShader } from '@paper-design/shaders';
     resizeObserver.observe(selector);
     cleanups.push(() => { resizeObserver.disconnect(); window.clearTimeout(resizeTimer); });
     const mutationObserver = new MutationObserver(() => requestAnimationFrame(() => updateSelectorGeometry(selector, true)));
-    selector.querySelectorAll('button').forEach((button) => mutationObserver.observe(button, { attributes: true, attributeFilter: ['aria-selected', 'aria-expanded'] }));
+    selector.querySelectorAll('button').forEach((button) => mutationObserver.observe(button, { attributes: true, attributeFilter: ['aria-selected', 'aria-expanded', 'aria-pressed'] }));
     cleanups.push(() => mutationObserver.disconnect());
     listen(selector, 'pointerenter', () => engageSurface(surface, selector, true));
     listen(selector, 'pointerleave', () => engageSurface(surface, selector, false));
@@ -222,10 +227,11 @@ import { ShaderMount, liquidMetalFragmentShader } from '@paper-design/shaders';
       const surface = entry.target;
       const state = surfaceState.get(surface);
       state.intersecting = entry.isIntersecting;
+      state.ratio = entry.intersectionRatio;
       if (entry.isIntersecting && surface.dataset.liquidProfile !== 'transition') mountSurface(surface);
     });
     reconcileSpeeds();
-  }, { threshold: 0.05, rootMargin: '72px 0px' });
+  }, { threshold: [0, 0.05, 0.25, 0.5, 0.75], rootMargin: '120px 0px' });
   const startObservation = () => {
     if (disposed) return;
     surfaces.forEach((surface) => intersectionObserver.observe(surface));
@@ -235,6 +241,10 @@ import { ShaderMount, liquidMetalFragmentShader } from '@paper-design/shaders';
   cleanups.push(() => intersectionObserver.disconnect());
 
   listen(document, 'visibilitychange', reconcileSpeeds);
+  listen(document, 'toptal:themechange', () => {
+    const uniforms = themeUniforms();
+    mounts.forEach((mount) => mount.setUniforms(uniforms));
+  });
   listen(reduceMotion, 'change', (event) => {
     if (!event.matches) return;
     mounts.forEach((mount) => mount.setSpeed(0));
@@ -258,12 +268,12 @@ import { ShaderMount, liquidMetalFragmentShader } from '@paper-design/shaders';
     fragment: 'liquidMetalFragmentShader',
     eligible: webglEligible,
     fallbackReason: fallbackReason || (webglEligible ? '' : 'webgl'),
-    budget: { surfaces: surfaces.length, maxLargeMoving: 1, maxPixels: 200000, maxPixelRatio: 1.25 },
+    budget: { surfaces: surfaces.length, maxLargeMoving: 2, maxPixels: 200000, maxPixelRatio: finePointer.matches ? 1.25 : 1.05 },
     device: { hardwareConcurrency, deviceMemory, lowPower },
     get mounted() { return mounts.size; },
     get disposed() { return disposed; },
     get movingLarge() { return surfaces.filter((surface) => profileFor(surface).large && Number(surface.dataset.shaderSpeed || 0) > 0).length; },
     get canvasPixels() { return Array.from(mounts.values()).reduce((total, mount) => total + mount.canvasElement.width * mount.canvasElement.height, 0); },
-    get surfaces() { return surfaces.map((surface) => ({ name: surface.dataset.liquidSurface, profile: surface.dataset.liquidProfile || 'selector', state: surface.dataset.shaderState || 'static', speed: Number(surface.dataset.shaderSpeed || 0), intersecting: surfaceState.get(surface)?.intersecting || false })); }
+    get surfaces() { return surfaces.map((surface) => ({ name: surface.dataset.liquidSurface, profile: surface.dataset.liquidProfile || 'selector', state: surface.dataset.shaderState || 'static', speed: Number(surface.dataset.shaderSpeed || 0), authoredIdle: profileFor(surface).idle, large: profileFor(surface).large, visible: surfaceState.get(surface)?.intersecting || false, intersectionRatio: Number((surfaceState.get(surface)?.ratio || 0).toFixed(3)) })); }
   };
 })();

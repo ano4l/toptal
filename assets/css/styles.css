@@ -785,3 +785,180 @@ button, a, input, summary, [tabindex] { outline: none; }
   .hero, .section { min-height: auto; padding: 36px 0; }
   .js .hero-enter, .js .reveal-mask > *, .js .ranking-row { opacity: 1; transform: none; }
 }
+
+/* Shader-first final art direction: one bounded cobalt/chrome current, thirteen shared Paper surfaces. */
+:root {
+  --liquid-static: linear-gradient(112deg, #04102f 0%, #1641b6 23%, #8ea9f7 41%, #d8e2fb 50%, #204ecf 62%, #071945 82%, #02091f 100%);
+  --liquid-plate: rgba(251,252,254,.9);
+  --liquid-dark-plate: rgba(4,13,41,.78);
+}
+:root[data-theme="dark"] {
+  --liquid-static: linear-gradient(112deg, #020716 0%, #11285f 22%, #6687f4 42%, #c4d2ff 51%, #315cd0 64%, #07142f 83%, #020611 100%);
+  --liquid-plate: rgba(13,26,44,.9);
+  --liquid-dark-plate: rgba(2,7,22,.8);
+}
+.liquid-shader-thumb, .liquid-field { background: var(--liquid-static); }
+
+/* Header and footer use lightweight current-derived edges; the primary fields remain real Paper canvases. */
+.site-header::after { height: 3px; background: var(--liquid-static); background-size: 220% 100%; opacity: .72; transform: none; }
+.site-footer { position: relative; }
+.site-footer::before { position: absolute; top: 0; right: 0; left: 0; z-index: 1; height: 5px; background: var(--liquid-static); background-size: 220% 100%; content: ""; }
+@media (prefers-reduced-motion: no-preference) {
+  .site-header::after, .site-footer::before { animation: bounded-current 7s ease-in-out infinite alternate; }
+  @keyframes bounded-current { to { background-position: 100% 50%; } }
+}
+
+/* Hero: large live material environment with opaque human-proof plates. */
+.hero { position: relative; isolation: isolate; overflow: hidden; }
+.hero-current { top: 0; right: 0; bottom: 0; z-index: 0; width: 55%; border-left: 1px solid rgba(247,249,253,.42); box-shadow: inset 24px 0 50px rgba(2,9,31,.2); }
+.hero-current::after { background: linear-gradient(90deg, rgba(3,11,36,.18), rgba(255,255,255,.04) 42%, rgba(3,11,36,.28)); }
+.hero-shell { z-index: 1; }
+.hero-switch { border: 1px solid color-mix(in srgb, var(--line-strong) 80%, transparent); background: var(--liquid-plate); }
+.hero-expert { margin: 24px 22px 24px 0; border: 1px solid rgba(247,249,253,.58); box-shadow: 0 28px 72px rgba(2,9,31,.28); }
+.hero-expert__portrait, .hero-expert__content { background: var(--white); }
+.hero-proof-seam { position: absolute; top: 0; right: 0; bottom: 0; z-index: 2; width: 2px; background: linear-gradient(180deg, rgba(247,249,253,.92), rgba(32,78,207,.8), rgba(5,18,58,.86)); box-shadow: -5px 0 14px rgba(4,13,41,.18); pointer-events: none; }
+.profile-selector { box-shadow: 0 -12px 34px rgba(2,9,31,.13); }
+
+/* Employer and operational proof share one full-width liquid horizon. */
+.proof-current-stage { position: relative; isolation: isolate; overflow: hidden; background: var(--navy); }
+.proof-current { inset: 0; z-index: 0; }
+.proof-current::after { background: linear-gradient(90deg, rgba(3,11,36,.54), rgba(255,255,255,.07) 46%, rgba(3,11,36,.56)); }
+.proof-current-stage > section { position: relative; z-index: 1; background: transparent; }
+.logo-proof__inner { padding-inline: clamp(20px,2vw,32px); background: var(--liquid-plate); }
+.metrics-track { gap: 1px; background: rgba(247,249,253,.26); }
+.metrics article { background: var(--liquid-plate); }
+.metrics article + article { border-left: 0; }
+
+/* Categories: one shared selector canvas, never one canvas per category. */
+.category-grid { position: relative; isolation: isolate; overflow: hidden; }
+.category-current { z-index: 0; border-radius: 0; box-shadow: inset 0 0 0 1px rgba(247,249,253,.44), 0 16px 32px rgba(5,18,58,.2); }
+.category-card { z-index: 1; }
+.category-card button { min-height: 220px; }
+.category-card.is-selected { background: rgba(4,13,41,.42); color: var(--light); }
+.category-card.is-selected small, .category-card.is-selected > a { color: #e4ebff; }
+.category-card.is-selected .category-icon { filter: brightness(0) invert(1); }
+
+/* Network: real people remain solid proof plates inside one shared material stage. */
+.network-stage { position: relative; isolation: isolate; overflow: hidden; margin-top: 48px; border: 1px solid rgba(64,105,225,.46); padding: 0 24px 24px; background: var(--navy); box-shadow: 0 28px 72px rgba(14,28,56,.14); }
+.network-current { inset: 0; z-index: 0; }
+.network-current::after { background: linear-gradient(125deg, rgba(3,11,36,.38), rgba(255,255,255,.04) 48%, rgba(3,11,36,.5)); }
+.network-stage > :not(.network-current) { position: relative; z-index: 2; }
+.network-tabs-wrap { margin-top: 0; background: rgba(3,11,36,.7); }
+.network-tabs button { color: #c4d0e8; }
+.network-tabs button[aria-selected="true"] { background: rgba(247,249,253,.16); color: var(--light); }
+.network-status { color: #c4d0e8; }
+.network-track { margin-top: 24px; }
+.expert-card, .discipline-proof-card { background: var(--white); }
+.network-discovery { background: rgba(2,9,31,.48); border: 1px solid rgba(247,249,253,.24); }
+
+/* Delivery: the shared field follows the active model's content-side plane. */
+.delivery-panels { overflow: hidden; padding: 12px; background: var(--navy); }
+.delivery-liquid-plane { top: 12px; bottom: 12px; left: var(--delivery-liquid-left, 38%); z-index: 0; width: var(--delivery-liquid-width, 40%); height: auto; border: 1px solid rgba(247,249,253,.38); transform: none; transition: left 480ms var(--ease), width 480ms var(--ease); }
+.delivery-panel { z-index: 1; }
+.delivery-panel.is-active { background: transparent; }
+.delivery-panel.is-active .delivery-panel__content { background: var(--liquid-plate); }
+.delivery-panel.is-active > button { background: rgba(3,11,36,.68); }
+
+/* Process: one shared field, strictly revealed through the tab rail and artifact pane. */
+.process-liquid-plane { inset: 0; z-index: 0; width: 100%; height: 100%; transform: none; transition: none; }
+.process-liquid-plane::after { background: linear-gradient(90deg, rgba(3,11,36,.12), rgba(255,255,255,.05) 62%, rgba(3,11,36,.36)); }
+.process-tabs button { background: var(--liquid-plate); }
+.process-tabs button[aria-selected="true"] { background: rgba(3,11,36,.58); }
+.process-panel__narrative { background: var(--white); opacity: 1 !important; transform: none !important; }
+.process-panel__narrative > * { opacity: 1; transform: translate3d(0,0,0); transition: opacity 160ms linear, transform 320ms var(--ease); }
+.process-panel.is-outgoing .process-panel__narrative > * { opacity: 0; transform: translate3d(calc(var(--process-direction,1) * -10px),0,0); }
+.process-panel.is-entering .process-panel__narrative > * { opacity: 0; transform: translate3d(calc(var(--process-direction,1) * 10px),0,0); }
+.process-panel__artifact { background: rgba(3,11,36,.52); }
+.brief-artifact, .match-artifact, .assurance-artifact { box-shadow: 0 20px 46px rgba(0,6,24,.25); }
+
+/* Expertise: one field connects the selected discipline rail to the output plate. */
+.expertise-workbench { position: relative; isolation: isolate; overflow: hidden; background: transparent; gap: 1px; }
+.expertise-current { inset: 0; z-index: 0; }
+.expertise-workbench > :not(.expertise-current) { position: relative; z-index: 2; }
+.expertise-categories { background: var(--liquid-plate); }
+.expertise-categories button[aria-selected="true"] { background: rgba(3,11,36,.62); color: var(--light); }
+.expertise-detail { background: transparent; }
+.expertise-skills { background: var(--liquid-plate); }
+.expertise-empty { position: relative; z-index: 2; background: var(--liquid-plate); }
+
+/* Ranking: the ladder sits inside one continuous field; #11 is the brighter legibility plate. */
+.ranking-ladder { isolation: isolate; overflow: hidden; border: 1px solid rgba(129,158,255,.5); padding: 20px; }
+.ranking-current { inset: 0; z-index: 0; }
+.ranking-ladder > :not(.ranking-current) { position: relative; z-index: 2; }
+.ranking-group { background: rgba(3,11,36,.72); }
+.ranking-group + .ranking-group { background: rgba(2,7,22,.76); }
+.ranking-row-toptal { border-radius: var(--radius); background: rgba(32,78,207,.26); }
+.ranking-row__scrim { background: linear-gradient(90deg, rgba(5,18,58,.18), rgba(5,18,58,.42) 48%, rgba(5,18,58,.66)); }
+
+/* Services: ambient stage plus strict selector and real clipped liquid curtain. */
+.service-stage { padding: 20px; gap: 0; background: var(--navy); }
+.service-ambient { inset: 0; z-index: 0; }
+.service-stage figure, .service-content { position: relative; z-index: 2; }
+.service-stage figure { border: 1px solid rgba(247,249,253,.34); }
+.service-stage figure img { height: 100%; }
+.service-content { border: 1px solid rgba(247,249,253,.34); border-left: 0; background: var(--liquid-dark-plate); color: var(--light); }
+.service-content > p, .service-content li { color: #c4d0e8; }
+.service-content li { border-color: rgba(247,249,253,.32); }
+.service-content .text-link { color: #a9bcff; }
+.service-liquid-wipe { inset: 20px; }
+.service-wipe-scrim { inset: 20px; }
+
+/* Conversion: final full-width material crescendo with deliberate reading plates. */
+.conversion-section { position: relative; isolation: isolate; overflow: hidden; background: var(--navy); color: var(--light); }
+.conversion-current { inset: 0; z-index: 0; }
+.conversion-current::after { background: linear-gradient(105deg, rgba(2,9,31,.2), rgba(255,255,255,.04) 52%, rgba(2,9,31,.42)); }
+.conversion-shell { position: relative; z-index: 2; }
+.conversion-proof { border-color: rgba(247,249,253,.24); }
+.conversion-proof article { background: rgba(2,9,31,.68); }
+.conversion-proof article + article { border-color: rgba(247,249,253,.2); }
+.conversion-proof span, .conversion-message > div:first-child p, .next-steps span, .talent-reassurance > span { color: #c4d0e8; }
+.conversion-message { margin-top: 18px; padding-inline: clamp(28px,4vw,58px); background: rgba(2,9,31,.76); box-shadow: 0 28px 72px rgba(0,5,22,.28); }
+.next-steps li { border-color: rgba(247,249,253,.2); }
+.next-steps li::before { border-color: #9cb0ff; color: #c9d4ff; }
+.talent-reassurance { border-color: #9cb0ff; }
+.talent-reassurance .text-link { color: #a9bcff; }
+
+@media (max-width: 960px) {
+  .hero-current { width: 58%; }
+  .network-stage { padding-inline: 18px; }
+  .delivery-liquid-plane { top: 12px; bottom: 12px; }
+  .service-stage { padding: 16px; }
+  .service-content { border-top: 0; border-left: 1px solid rgba(247,249,253,.34); }
+  .service-liquid-wipe, .service-wipe-scrim { inset: 16px; }
+}
+
+@media (min-width: 768px) and (max-width: 1179px) {
+  .hero { padding: 14px 0 16px; }
+  .hero-panel { min-height: calc(100dvh - var(--header-height) - 30px); gap: 12px 32px; padding-top: 46px; }
+  .hero-expert { min-height: 450px; margin: 12px 14px 12px 0; }
+  .profile-selector__item, .profile-selector__explore { min-height: 64px; }
+}
+
+@media (max-width: 767px) {
+  .hero-current { top: 31%; right: 0; bottom: 10%; width: 100%; border-top: 1px solid rgba(247,249,253,.42); border-left: 0; }
+  .hero-expert { margin: 18px 10px; }
+  .hero-proof-seam { top: auto; right: 0; bottom: 0; left: 0; width: auto; height: 2px; background: linear-gradient(90deg, rgba(247,249,253,.9), rgba(32,78,207,.82), rgba(5,18,58,.88)); }
+  .logo-proof__inner { margin-block: 10px 0; }
+  .metrics { padding: 10px 0; }
+  .metrics-track { gap: 1px; }
+  .category-card button { min-height: 250px; }
+  .network-stage { margin-top: 28px; padding: 0 14px 14px; }
+  .network-track { width: 100%; padding-right: 0; }
+  .delivery-panels { width: 100%; padding: 10px; }
+  .delivery-liquid-plane { top: 10px; bottom: 10px; }
+  .delivery-panel, .delivery-panel.is-active { background: transparent; }
+  .delivery-panel__content { background: var(--liquid-plate); }
+  .process-liquid-plane { inset: 0; height: 100%; }
+  .expertise-workbench { border-color: rgba(129,158,255,.44); }
+  .ranking-ladder { padding: 12px; }
+  .service-stage { padding: 12px; }
+  .service-liquid-wipe, .service-wipe-scrim { inset: 12px; }
+  .service-content { padding: 30px 22px 40px; }
+  .conversion-proof { gap: 1px; background: rgba(247,249,253,.2); }
+  .conversion-proof article { padding-inline: 22px; }
+  .conversion-message { margin-top: 12px; padding: 54px 22px 68px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-header::after, .site-footer::before { animation: none !important; }
+}
